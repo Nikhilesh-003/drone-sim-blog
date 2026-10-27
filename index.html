@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine through a custom ROS 2 bridge node.">
+<meta name="author" content="Nikhilesh Kumar">
+<meta property="og:title" content="Teaching a game engine to fly">
+<meta property="og:description" content="ArduPilot SITL + O3DE + a custom ROS 2 bridge node: autonomous drone missions in a game engine.">
+<meta property="og:image" content="images/o3de-viewport.jpg">
+<style>*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Flying ArduPilot in O3DE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (~66ch) with a sticky waypoint-style TOC on wide screens; avionics details (stack strip, WP labels) carry the identity. */
+:root{
+  --ground:#F3F5F7;
+  --panel:#FFFFFF;
+  --ink:#16202B;
+  --muted:#5B6877;
+  --rule:#D5DCE3;
+  --amber:#B86E00;
+  --amber-soft:#FBEBD2;
+  --sky:#1D5E8C;
+  --font-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --font-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --measure:66ch;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0E141B;--panel:#151D27;--ink:#DCE3EA;--muted:#93A1B0;--rule:#283442;
+  --amber:#F0A83A;--amber-soft:#2E2414;--sky:#7DB8E3;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0E141B;--panel:#151D27;--ink:#DCE3EA;--muted:#93A1B0;--rule:#283442;
+  --amber:#F0A83A;--amber-soft:#2E2414;--sky:#7DB8E3;color-scheme:dark}
+
+body{background:var(--ground);color:var(--ink);font-family:var(--font-body);font-size:1.125rem;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--sky);text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+::selection{background:var(--amber-soft)}
+
+.wrap{max-width:1180px;margin:0 auto}
+
+/* header */
+header.mast{display:grid;gap:18px;max-width:var(--measure)}
+.eyebrow{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.2rem,5.4vw,3.9rem);line-height:1.04;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.dek{font-size:clamp(1.1rem,2vw,1.3rem);color:var(--muted);margin:0;max-width:60ch}
+
+.stack{display:flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:4px;background:var(--panel);font-family:var(--font-mono);width:max-content;max-width:100%}
+.stack div{padding:10px 16px;display:grid;gap:2px;border-right:1px solid var(--rule)}
+.stack div:last-child{border-right:0}
+.stack .key{background:var(--amber-soft)}
+.stack .key span{color:var(--amber)}
+tr.key td{background:var(--amber-soft);font-weight:600}
+.stack span{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.stack b{font-weight:600;font-size:.95rem}
+
+/* hero */
+figure{margin:0}
+.hero{max-width:100%}
+.hero img{display:block;width:100%;height:auto;border-radius:4px;border:1px solid var(--rule)}
+figcaption{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);margin-top:10px;line-height:1.5}
+
+/* body grid */
+.layout{display:grid;grid-template-columns:1fr;gap:56px;padding-block:56px 0}
+@media (min-width:1080px){.layout{grid-template-columns:200px minmax(0,1fr)}}
+main{min-width:0;max-width:820px;display:grid;gap:56px}
+nav.toc{display:none}
+@media (min-width:1080px){
+  nav.toc{display:block;position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;padding-top:6px;font-family:var(--font-mono);font-size:.78rem}
+}
+nav.toc p{letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px;border-left:1px solid var(--rule)}
+nav.toc a{display:grid;grid-template-columns:3.2em 1fr;padding:5px 0 5px 12px;color:var(--muted);text-decoration:none;margin-left:-1px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.on{color:var(--ink);border-left-color:var(--amber)}
+nav.toc a span{color:var(--amber)}
+
+article{min-width:0;max-width:var(--measure)}
+article > section{scroll-margin-top:24px}
+article > section + section{margin-top:56px}
+article > section:first-child > p:first-child{margin-top:0}
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.55rem,3vw,2rem);line-height:1.15;margin:0 0 6px;text-wrap:balance}
+.wp{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:8px}
+p{margin:14px 0}
+article ul{padding-left:1.3em;margin:14px 0}
+article li{margin:6px 0}
+strong{font-weight:600}
+
+.insight{border-left:3px solid var(--amber);background:var(--amber-soft);padding:14px 18px;margin:22px 0;border-radius:0 4px 4px 0}
+.insight p{margin:0}
+
+/* stack table */
+.tbl{overflow-x:auto;margin:20px 0;border:1px solid var(--rule);border-radius:4px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td:first-child{font-family:var(--font-mono);font-size:.84rem;white-space:nowrap}
+
+/* loop diagram */
+.loop{margin:26px 0;display:grid;gap:10px}
+.node{border:1px solid var(--rule);background:var(--panel);border-radius:4px;padding:12px 16px;display:grid;gap:2px}
+.node .t{font-family:var(--font-display);font-weight:600;font-size:1.02rem}
+.node .s{font-family:var(--font-mono);font-size:.75rem;color:var(--muted)}
+.node.core{border-color:var(--amber)}
+.edge{font-family:var(--font-mono);font-size:.74rem;color:var(--sky);padding-left:18px;position:relative}
+.edge::before{content:"";position:absolute;left:6px;top:-6px;bottom:-6px;border-left:1px dashed var(--sky)}
+.edge.back{color:var(--amber)}
+.edge.back::before{border-color:var(--amber)}
+
+/* mission figures */
+.pair{display:grid;grid-template-columns:1fr;gap:18px}
+@media (min-width:700px){.pair{grid-template-columns:1fr 1fr}}
+.pair img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:4px}
+
+.takeaways{display:grid;gap:18px;margin:20px 0}
+@media (min-width:700px){.takeaways{grid-template-columns:1fr 1fr}}
+.takeaways > div{border-top:2px solid var(--amber);padding-top:10px}
+.takeaways h3{font-family:var(--font-display);font-weight:600;font-size:1.02rem;margin:0 0 6px}
+.takeaways ul{margin:0;padding-left:1.1em;font-size:1rem}
+
+footer{border-top:1px solid var(--rule);padding-block:32px 56px;display:grid;gap:24px;grid-template-columns:1fr;scroll-margin-top:24px}
+@media (min-width:700px){footer{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);column-gap:40px}}
+.author{display:grid;gap:4px;align-content:start}
+.author .lbl,.contact dt{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.author .name{font-family:var(--font-display);font-weight:600;font-size:1.4rem;margin:0;line-height:1.2}
+.author .role{margin:0;color:var(--muted);font-size:1rem}
+.contact{margin:0;display:grid;gap:10px;font-family:var(--font-mono);font-size:.84rem}
+.contact div{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:12px;align-items:baseline}
+.contact dd{margin:0;overflow-wrap:anywhere}
+.sel{user-select:all}
+.credits{grid-column:1/-1;margin:0;font-family:var(--font-mono);font-size:.72rem;line-height:1.7;color:var(--muted);border-top:1px solid var(--rule);padding-top:16px}
+
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="layout">
+    <nav class="toc" aria-label="Contents">
+      <p>Flight plan</p>
+      <ol>
+        <li><a href="#why"><span>WP1</span>Why O3DE</a></li>
+        <li><a href="#stack"><span>WP2</span>The stack</a></li>
+        <li><a href="#loop"><span>WP3</span>How it fits together</a></li>
+        <li><a href="#world"><span>WP4</span>The simulated world</a></li>
+        <li><a href="#bridge"><span>WP5</span>The bridge node</a></li>
+        <li><a href="#nav"><span>WP6</span>Navigation</a></li>
+        <li><a href="#mission"><span>WP7</span>The mission</a></li>
+        <li><a href="#takeaways"><span>RTL</span>Key takeaways</a></li>
+        <li><a href="#author"><span>—</span>Author</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <header class="mast">
+        <span class="eyebrow">Robotics simulation</span>
+        <h1>Teaching a game engine to fly</h1>
+        <p class="dek">Real ArduPilot flight firmware, a quadcopter that exists inside Open 3D Engine, and the custom ROS&nbsp;2 bridge node that makes the two work as one: the piece that makes autonomous missions over a real-world map possible.</p>
+        <div class="stack" aria-label="Technology stack">
+          <div><span>Simulator</span><b>O3DE</b></div>
+          <div><span>Autopilot</span><b>ArduPilot SITL</b></div>
+          <div><span>Middleware</span><b>ROS 2 Humble</b></div>
+          <div class="key"><span>The key</span><b>Custom bridge node</b></div>
+          <div><span>Ground control</span><b>QGroundControl</b></div>
+        </div>
+      </header>
+
+      <figure class="hero">
+        <img src="images/o3de-viewport.jpg" alt="A quadcopter model resting on a checkered ground plane in O3DE, with rocky hills and sky in the background" width="1010" height="665">
+        <figcaption>The simulated quadcopter in O3DE, rendered with the Atom engine.</figcaption>
+      </figure>
+
+      <article>
+      <section id="why">
+        <span class="wp">WP1 · Motivation</span>
+        <h2>Why put a flight controller in a game engine?</h2>
+        <p>Gazebo is the usual simulator for ArduPilot and ROS. <strong>Open 3D Engine (O3DE)</strong> offers a different set of strengths:</p>
+        <ul>
+          <li><strong>Rendering quality.</strong> O3DE's Atom renderer produces realistic camera imagery, which is useful for vision and perception work.</li>
+          <li><strong>Native ROS 2 support.</strong> O3DE's ROS 2 Gems provide sensors and robot controllers you can attach to objects in the editor.</li>
+          <li><strong>An open integration problem.</strong> There's no ready-made ArduPilot connector for O3DE, so linking the two means designing the integration from scratch.</li>
+        </ul>
+        <p>The goal of the project: a drone in a 3D scene, flown by ArduPilot, streaming a live camera feed, and able to fly missions planned in a ground control station.</p>
+      </section>
+
+      <section id="stack">
+        <span class="wp">WP2 · Components</span>
+        <h2>The stack</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>Layer</th><th>Tool</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Middleware</td><td>Ubuntu 22.04, ROS 2 Humble</td><td>Communication between components</td></tr>
+            <tr><td>Simulator</td><td>O3DE with ROS 2 Gems</td><td>3D world, physics, sensors and camera</td></tr>
+            <tr><td>Autopilot</td><td>ArduPilot SITL (ArduCopter)</td><td>State estimation, flight control, missions</td></tr>
+            <tr class="key"><td>Bridge</td><td>Custom ROS 2 node</td><td>The custom-built component, and the one that connects everything else</td></tr>
+            <tr><td>Ground control</td><td>QGroundControl</td><td>Mission planning and live map view</td></tr>
+          </tbody>
+        </table></div>
+        <p><strong>SITL</strong> (software-in-the-loop) is the key piece. It's the same ArduCopter firmware that runs on a real flight controller, compiled to run on a PC with a simulator standing in for the real sensors and motors.</p>
+        <p>Every layer except one is off the shelf. The custom bridge node is what turns these separate tools into a working flight simulator.</p>
+      </section>
+
+      <section id="loop">
+        <span class="wp">WP3 · Architecture</span>
+        <h2>How it fits together</h2>
+        <p>The system runs as one closed loop. The simulator reports the drone's state, the autopilot decides what the motors should do, and the bridge turns that decision back into motion in the simulated world.</p>
+
+        <div class="loop" role="img" aria-label="Control loop: the O3DE simulator reports vehicle state to the bridge, the bridge passes it to ArduPilot, ArduPilot returns motor commands, and the bridge turns them into motion in O3DE">
+          <div class="node"><span class="t">O3DE simulator</span><span class="s">physics · sensors · camera</span></div>
+          <div class="edge">vehicle state</div>
+          <div class="node core"><span class="t">ROS 2 bridge</span><span class="s">translation layer</span></div>
+          <div class="edge">sensor data</div>
+          <div class="node"><span class="t">ArduPilot SITL</span><span class="s">state estimation · flight control · missions</span></div>
+          <div class="edge back">motor outputs</div>
+          <div class="node core"><span class="t">ROS 2 bridge</span><span class="s">translation layer</span></div>
+          <div class="edge back">motion commands back to O3DE, and the loop repeats</div>
+        </div>
+
+        <p>Every arrow in that loop passes through the bridge. Remove it and the simulator and autopilot have no way to reach each other. The bridge is also deliberately focused: it never sees the mission. Waypoints go straight from QGroundControl to ArduPilot, and all navigation decisions stay inside proven flight firmware. The bridge only translates data between the two systems.</p>
+      </section>
+
+      <section id="world">
+        <span class="wp">WP4 · Simulation</span>
+        <h2>The simulated world</h2>
+        <p>In O3DE, a robot is built in the editor from <strong>entities and components</strong> and saved as a reusable <strong>prefab</strong>. The scene contains a ground plane, an environment with lighting and sky, and the drone itself.</p>
+        <p>The drone is a physics body carrying a set of ROS 2 sensors, including an inertial sensor, positioning and a forward-facing camera that streams live video into ROS 2. A detailed quadcopter model gives it a realistic look, while physics uses a simple shape to keep the simulation fast and stable.</p>
+      </section>
+
+      <section id="bridge">
+          <span class="wp">WP5 · The key</span>
+          <h2>The bridge node: the key to all of it</h2>
+          <p>O3DE and ArduPilot were never designed to work together. No connector exists between them, and nothing in either project expects the other. The <strong>custom ROS 2 bridge node</strong> is what makes this project possible. Without it there's a game engine and a flight controller running side by side with no way to reach each other. With it, they behave as one flight simulator.</p>
+          <p>The bridge is the interpreter between the two systems, and it does that job continuously, many times per second:</p>
+          <ul>
+            <li><strong>Reporting state.</strong> It turns the simulator's view of the drone into the sensor data ArduPilot expects, so the autopilot believes it's flying a real aircraft.</li>
+            <li><strong>Reconciling coordinate frames.</strong> Robotics software and flight controllers use different conventions for which way is up, north and forward. The bridge translates every value consistently.</li>
+            <li><strong>Executing commands.</strong> It turns ArduPilot's motor outputs into motion the simulator applies to the drone, which closes the loop.</li>
+            <li><strong>Keeping time and consistency.</strong> Both sides need to see the same vehicle at the same moment. The bridge keeps them in step.</li>
+          </ul>
+          <p>Every capability the project shows depends on this one component: stable hover, autonomous navigation, GPS waypoints and complete missions. The rest of the stack is off the shelf. The bridge is the engineering that makes those tools fly together.</p>
+          <div class="insight"><p>The autopilot handles control and the simulator handles motion. The bridge gives each job one clear owner and keeps the two systems in agreement, so they never compete.</p></div>
+        </section>
+
+      <section id="nav">
+        <span class="wp">WP6 · Navigation</span>
+        <h2>From hovering to navigating</h2>
+        <p>Holding altitude is the first milestone. Flying to GPS waypoints requires ArduPilot's state estimator (EKF) to trust its position and heading completely. In simulation that means giving it data that's clean and, above all, <strong>consistent</strong>: every value describes the same vehicle in the same place at the same moment.</p>
+        <p>Supplying that consistency is the bridge's job. Once the estimator is satisfied, ArduPilot's autonomous flight modes become available and the drone can fly missions over a real-world map.</p>
+        <div class="insight"><p>A state estimator values consistency over realism. One reliable source of truth beats several sources that occasionally disagree.</p></div>
+      </section>
+
+      <section id="mission">
+        <span class="wp">WP7 · Results</span>
+        <h2>Flying the mission</h2>
+        <p>Missions are planned in QGroundControl over satellite imagery of Chennai and flown fully autonomously. The test mission is a loop: take off, fly to two waypoints in turn, then return to launch.</p>
+      </section>
+          </article>
+
+      <div class="pair">
+        <figure>
+          <img src="images/qgc-mission-planned.jpg" alt="QGroundControl satellite map with the planned mission route in orange, drone just after takeoff" width="1898" height="1200" loading="lazy">
+          <figcaption>Planned. The orange line is the mission route, shown just after takeoff.</figcaption>
+        </figure>
+        <figure>
+          <img src="images/qgc-mission-flown.jpg" alt="The same QGroundControl map later in the mission, with the flown track in red closely following the planned route" width="1898" height="1200" loading="lazy">
+          <figcaption>Flown. The red track follows the planned route through both waypoints.</figcaption>
+        </figure>
+      </div>
+
+      <article>
+      <section>
+        <p>The drone climbs out, visits each waypoint in sequence and heads home, while O3DE renders the flight and the onboard camera streams to ROS 2. Firmware built for real aircraft is flying a vehicle that exists inside a game engine.</p>
+      </section>
+
+      <section id="takeaways">
+        <span class="wp">RTL · Summary</span>
+        <h2>Key takeaways</h2>
+        <div class="takeaways">
+          <div>
+            <h3>Robotics fundamentals</h3>
+            <ul>
+              <li>Coordinate frame conventions are the foundation of every robotics integration.</li>
+              <li>State estimators need consistent inputs before they enable autonomy.</li>
+              <li>Each controller should own exactly one job.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Systems integration</h3>
+            <ul>
+              <li>The bridge between systems decides whether the whole works. It deserves the most engineering attention.</li>
+                <li>Several independent programs, connected over different protocols, can behave as one system.</li>
+              <li>Interfaces include more than names: timing, message types and delivery guarantees matter too.</li>
+              <li>A defined startup sequence is part of the design.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Engineering approach</h3>
+            <ul>
+              <li>Verify each link in the chain on its own.</li>
+              <li>Build observability in from the start.</li>
+              <li>Keep flight logic inside proven firmware. A focused integration layer does the rest.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Where it goes next</h3>
+            <ul>
+              <li>Higher-fidelity flight dynamics.</li>
+              <li>Richer sensor models.</li>
+              <li>Perception on the live camera feed.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+          </article>
+
+      <footer id="author">
+        <div class="author">
+          <span class="lbl">Written by</span>
+          <p class="name">Nikhilesh Kumar</p>
+          <p class="role">Robotics and Facilities System Engineer · Dubai, United Arab Emirates</p>
+        </div>
+        <dl class="contact">
+          <div><dt>Portfolio</dt><dd><a href="https://nikhilesh-kumar.vercel.app/">nikhilesh-kumar.vercel.app</a></dd></div>
+          <div><dt>LinkedIn</dt><dd><a href="https://www.linkedin.com/in/nikhilesh-kumar-bharathi/">nikhilesh-kumar-bharathi</a></dd></div>
+          <div><dt>GitHub</dt><dd><a href="https://github.com/Nikhilesh-003">Nikhilesh-003</a></dd></div>
+        </dl>
+        <p class="credits">Ubuntu 22.04 · ROS 2 Humble · O3DE · ArduPilot SITL · QGroundControl<br>Drone model: “Minimalist Drone Model” on Sketchfab (CC BY). Map imagery shown inside QGroundControl.</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  if(!links.length||!('IntersectionObserver' in window))return;
+  var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){links.forEach(function(a){a.classList.remove('on')});var a=map[e.target.id];if(a)a.classList.add('on')}
+  })},{rootMargin:'-20% 0px -70% 0px'});
+  Object.keys(map).forEach(function(id){var s=document.getElementById(id);if(s)io.observe(s)});
+})();
+</script>
+</body>
+</html>
