@@ -1,0 +1,10 @@
+# Teaching a game engine to fly: ArduPilot SITL in O3DE with a custom ROS 2 bridge
+
+> Article by Nikhilesh Kumar (Robotics and Facilities System Engineer, Dubai) on flying a quadcopter simulated in Open 3D Engine (O3DE) with real ArduPilot flight firmware running as SITL (software-in-the-loop). A custom ROS 2 Humble bridge node connects the simulator and the autopilot, which have no ready-made connector. The drone holds a stable hover, streams a live camera feed into ROS 2, and flies autonomous GPS waypoint missions planned in QGroundControl over satellite imagery of Chennai.
+
+## Article
+- [Teaching a game engine to fly](https://nikhilesh-003.github.io/drone-sim-blog/): motivation, stack, architecture, simulated world, the bridge node, navigation, the flown mission, key takeaways and FAQ
+
+## Related
+- [Author portfolio](https://nikhilesh-kumar.vercel.app/)
+- [Multi-robot coverage and formation control article](https://nikhilesh-003.github.io/multi-robot-blog/): ROS 2 Jazzy, Nav2, Gazebo

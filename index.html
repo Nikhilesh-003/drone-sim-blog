@@ -3,13 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine through a custom ROS 2 bridge node.">
+<meta name="description" content="How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine (O3DE) through a custom ROS 2 bridge node, with autonomous missions planned in QGroundControl.">
 <meta name="author" content="Nikhilesh Kumar">
-<meta property="og:title" content="Teaching a game engine to fly">
-<meta property="og:description" content="ArduPilot SITL + O3DE + a custom ROS 2 bridge node: autonomous drone missions in a game engine.">
-<meta property="og:image" content="images/o3de-viewport.jpg">
 <style>*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Flying ArduPilot in O3DE</title>
+<title>ArduPilot SITL Drone Simulation in O3DE with a Custom ROS 2 Bridge | Teaching a Game Engine to Fly</title>
+<link rel="canonical" href="https://nikhilesh-003.github.io/drone-sim-blog/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='7' cy='7' r='5' fill='none' stroke='%23E0782A' stroke-width='2.5'/%3E%3Ccircle cx='25' cy='7' r='5' fill='none' stroke='%23E0782A' stroke-width='2.5'/%3E%3Ccircle cx='7' cy='25' r='5' fill='none' stroke='%23E0782A' stroke-width='2.5'/%3E%3Ccircle cx='25' cy='25' r='5' fill='none' stroke='%23E0782A' stroke-width='2.5'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23E0782A'/%3E%3C/svg%3E">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Nikhilesh Kumar · Robotics articles">
+<meta property="og:url" content="https://nikhilesh-003.github.io/drone-sim-blog/">
+<meta property="og:title" content="Teaching a game engine to fly: ArduPilot SITL in O3DE">
+<meta property="og:description" content="How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine (O3DE) through a custom ROS 2 bridge node, with autonomous missions planned in QGroundControl.">
+<meta property="og:image" content="https://nikhilesh-003.github.io/drone-sim-blog/images/o3de-viewport.jpg">
+<meta property="og:image:width" content="1010">
+<meta property="og:image:height" content="665">
+<meta property="og:image:alt" content="A quadcopter model on a checkered ground plane in O3DE">
+<meta property="article:published_time" content="2026-10-27T11:19:00+04:00">
+<meta property="article:author" content="https://www.linkedin.com/in/nikhilesh-kumar-bharathi/">
+<meta property="article:tag" content="ArduPilot"><meta property="article:tag" content="O3DE"><meta property="article:tag" content="ROS 2">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Teaching a game engine to fly: ArduPilot SITL in O3DE">
+<meta name="twitter:description" content="How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine (O3DE) through a custom ROS 2 bridge node, with autonomous missions planned in QGroundControl.">
+<meta name="twitter:image" content="https://nikhilesh-003.github.io/drone-sim-blog/images/o3de-viewport.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Person", "@id": "https://nikhilesh-kumar.vercel.app/#person", "name": "Nikhilesh Kumar", "jobTitle": "Robotics and Facilities System Engineer", "url": "https://nikhilesh-kumar.vercel.app/", "address": {"@type": "PostalAddress", "addressLocality": "Dubai", "addressCountry": "AE"}, "sameAs": ["https://www.linkedin.com/in/nikhilesh-kumar-bharathi/", "https://github.com/Nikhilesh-003", "https://nikhilesh-003.github.io/multi-robot-blog/"]}, {"@type": "TechArticle", "@id": "https://nikhilesh-003.github.io/drone-sim-blog/#article", "headline": "Teaching a game engine to fly: ArduPilot SITL in O3DE with a custom ROS 2 bridge", "alternativeHeadline": "ArduPilot SITL Drone Simulation in O3DE with a Custom ROS 2 Bridge", "description": "How real ArduPilot flight firmware flies a quadcopter simulated in Open 3D Engine (O3DE) through a custom ROS 2 bridge node, with autonomous missions planned in QGroundControl.", "image": {"@type": "ImageObject", "url": "https://nikhilesh-003.github.io/drone-sim-blog/images/o3de-viewport.jpg", "width": 1010, "height": 665}, "datePublished": "2026-10-27T11:19:00+04:00", "dateModified": "2026-11-04T12:00:00+04:00", "author": {"@id": "https://nikhilesh-kumar.vercel.app/#person"}, "publisher": {"@id": "https://nikhilesh-kumar.vercel.app/#person"}, "mainEntityOfPage": "https://nikhilesh-003.github.io/drone-sim-blog/", "url": "https://nikhilesh-003.github.io/drone-sim-blog/", "inLanguage": "en", "keywords": ["ArduPilot SITL", "O3DE", "Open 3D Engine", "drone simulation", "ROS 2 Humble", "ROS 2 bridge", "QGroundControl", "ArduCopter", "autonomous drone missions", "quadcopter simulation"], "about": ["Drone simulation", "Software-in-the-loop testing", "Robotics systems integration"]}, {"@type": "FAQPage", "@id": "https://nikhilesh-003.github.io/drone-sim-blog/#faq", "mainEntity": [{"@type": "Question", "name": "Can ArduPilot fly a drone simulated in O3DE?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. ArduPilot SITL runs the real ArduCopter firmware on a PC, and a custom ROS 2 bridge node connects it to a quadcopter simulated in Open 3D Engine. No ready-made ArduPilot connector exists for O3DE, so the bridge is what makes the two behave as one flight simulator."}}, {"@type": "Question", "name": "What is ArduPilot SITL?", "acceptedAnswer": {"@type": "Answer", "text": "SITL (software-in-the-loop) is the same ArduCopter firmware that runs on a real flight controller, compiled to run on a PC with a simulator standing in for the real sensors and motors."}}, {"@type": "Question", "name": "Why use O3DE instead of Gazebo for drone simulation?", "acceptedAnswer": {"@type": "Answer", "text": "O3DE's Atom renderer produces realistic camera imagery for vision and perception work, and its ROS 2 Gems provide sensors and robot controllers you can attach to objects in the editor. Gazebo remains the usual choice, but O3DE offers a different set of strengths."}}, {"@type": "Question", "name": "What does the ROS 2 bridge node do?", "acceptedAnswer": {"@type": "Answer", "text": "It is the interpreter between the simulator and the autopilot. Many times per second it reports the drone's state in the form ArduPilot expects, reconciles the different coordinate frame conventions, turns ArduPilot's motor outputs into motion in the simulator, and keeps both sides in step."}}, {"@type": "Question", "name": "How are autonomous missions flown?", "acceptedAnswer": {"@type": "Answer", "text": "Missions are planned in QGroundControl over satellite imagery of Chennai. Waypoints go straight from QGroundControl to ArduPilot, which makes every navigation decision; the drone takes off, flies to each waypoint in turn and returns to launch while O3DE renders the flight."}}, {"@type": "Question", "name": "Why does ArduPilot's EKF need consistent sensor data?", "acceptedAnswer": {"@type": "Answer", "text": "Flying to GPS waypoints requires the state estimator to trust its position and heading completely. In simulation that means every value must describe the same vehicle in the same place at the same moment; once the estimator is satisfied, autonomous flight modes become available."}}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -83,6 +100,7 @@ article{min-width:0;max-width:var(--measure)}
 article > section{scroll-margin-top:24px}
 article > section + section{margin-top:56px}
 article > section:first-child > p:first-child{margin-top:0}
+.qa{margin:22px 0 0}.qa h3{font-family:var(--font-display);font-weight:600;font-size:1.2rem;line-height:1.2;margin:0 0 6px}.qa p{margin:0}
 h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.55rem,3vw,2rem);line-height:1.15;margin:0 0 6px;text-wrap:balance}
 .wp{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:8px}
 p{margin:14px 0}
@@ -178,13 +196,14 @@ footer{border-top:1px solid var(--rule);padding-block:32px 56px;display:grid;gap
         <li><a href="#nav"><span>WP6</span>Navigation</a></li>
         <li><a href="#mission"><span>WP7</span>The mission</a></li>
         <li><a href="#takeaways"><span>RTL</span>Key takeaways</a></li>
+        <li><a href="#faq"><span>?</span>FAQ</a></li>
         <li><a href="#author"><span>—</span>Author</a></li>
       </ol>
     </nav>
 
     <main>
       <header class="mast">
-        <span class="eyebrow">Robotics simulation</span>
+        <span class="eyebrow">Drone simulation · ArduPilot SITL · O3DE · ROS 2 · <time datetime="2026-10-27">27 Oct 2026</time></span>
         <h1>Teaching a game engine to fly</h1>
         <p class="dek">Real ArduPilot flight firmware, a quadcopter that exists inside Open 3D Engine, and the custom ROS&nbsp;2 bridge node that makes the two work as one: the piece that makes autonomous missions over a real-world map possible.</p>
         <div class="stack" aria-label="Technology stack">
@@ -341,6 +360,16 @@ footer{border-top:1px solid var(--rule);padding-block:32px 56px;display:grid;gap
             </ul>
           </div>
         </div>
+      </section>
+      <section id="faq">
+        <span class="wp">? · Questions</span>
+        <h2>Frequently asked questions</h2>
+          <div class="qa"><h3>Can ArduPilot fly a drone simulated in O3DE?</h3><p>Yes. ArduPilot SITL runs the real ArduCopter firmware on a PC, and a custom ROS 2 bridge node connects it to a quadcopter simulated in Open 3D Engine. No ready-made ArduPilot connector exists for O3DE, so the bridge is what makes the two behave as one flight simulator.</p></div>
+          <div class="qa"><h3>What is ArduPilot SITL?</h3><p>SITL (software-in-the-loop) is the same ArduCopter firmware that runs on a real flight controller, compiled to run on a PC with a simulator standing in for the real sensors and motors.</p></div>
+          <div class="qa"><h3>Why use O3DE instead of Gazebo for drone simulation?</h3><p>O3DE's Atom renderer produces realistic camera imagery for vision and perception work, and its ROS 2 Gems provide sensors and robot controllers you can attach to objects in the editor. Gazebo remains the usual choice, but O3DE offers a different set of strengths.</p></div>
+          <div class="qa"><h3>What does the ROS 2 bridge node do?</h3><p>It is the interpreter between the simulator and the autopilot. Many times per second it reports the drone's state in the form ArduPilot expects, reconciles the different coordinate frame conventions, turns ArduPilot's motor outputs into motion in the simulator, and keeps both sides in step.</p></div>
+          <div class="qa"><h3>How are autonomous missions flown?</h3><p>Missions are planned in QGroundControl over satellite imagery of Chennai. Waypoints go straight from QGroundControl to ArduPilot, which makes every navigation decision; the drone takes off, flies to each waypoint in turn and returns to launch while O3DE renders the flight.</p></div>
+          <div class="qa"><h3>Why does ArduPilot's EKF need consistent sensor data?</h3><p>Flying to GPS waypoints requires the state estimator to trust its position and heading completely. In simulation that means every value must describe the same vehicle in the same place at the same moment; once the estimator is satisfied, autonomous flight modes become available.</p></div>
       </section>
           </article>
 
