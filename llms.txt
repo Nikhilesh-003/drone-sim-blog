@@ -8,3 +8,4 @@
 ## Related
 - [Author portfolio](https://nikhilesh-kumar.vercel.app/)
 - [Multi-robot coverage and formation control article](https://nikhilesh-003.github.io/multi-robot-blog/): ROS 2 Jazzy, Nav2, Gazebo
+- [EHS compliance tracker article](https://nikhilesh-003.github.io/ehs-tracker-blog/): automated statutory compliance tracking with Excel, Power Automate and Outlook
