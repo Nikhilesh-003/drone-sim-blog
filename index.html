@@ -111,6 +111,10 @@ strong{font-weight:600}
 
 .insight{border-left:3px solid var(--amber);background:var(--amber-soft);padding:14px 18px;margin:22px 0;border-radius:0 4px 4px 0}
 .insight p{margin:0}
+.course{border:1px solid var(--amber);background:var(--panel);border-radius:4px;padding:20px 22px;margin:20px 0 0}
+.course p{margin:0 0 14px}
+.course .btn{display:inline-block;font-family:var(--font-display);font-weight:600;background:var(--amber);color:var(--ground);text-decoration:none;padding:10px 18px;border-radius:4px}
+.course .btn:hover{filter:brightness(1.08)}
 
 /* stack table */
 .tbl{overflow-x:auto;margin:20px 0;border:1px solid var(--rule);border-radius:4px;background:var(--panel)}
@@ -198,6 +202,7 @@ footer{border-top:1px solid var(--rule);padding-block:32px 56px;display:grid;gap
         <li><a href="#mission"><span>WP7</span>The mission</a></li>
         <li><a href="#takeaways"><span>RTL</span>Key takeaways</a></li>
         <li><a href="#faq"><span>?</span>FAQ</a></li>
+        <li><a href="#course"><span>+</span>Build it yourself</a></li>
         <li><a href="#author"><span>—</span>Author</a></li>
       </ol>
     </nav>
@@ -371,6 +376,14 @@ footer{border-top:1px solid var(--rule);padding-block:32px 56px;display:grid;gap
           <div class="qa"><h3>What does the ROS 2 bridge node do?</h3><p>It is the interpreter between the simulator and the autopilot. Many times per second it reports the drone's state in the form ArduPilot expects, reconciles the different coordinate frame conventions, turns ArduPilot's motor outputs into motion in the simulator, and keeps both sides in step.</p></div>
           <div class="qa"><h3>How are autonomous missions flown?</h3><p>Missions are planned in QGroundControl over satellite imagery of Chennai. Waypoints go straight from QGroundControl to ArduPilot, which makes every navigation decision; the drone takes off, flies to each waypoint in turn and returns to launch while O3DE renders the flight.</p></div>
           <div class="qa"><h3>Why does ArduPilot's EKF need consistent sensor data?</h3><p>Flying to GPS waypoints requires the state estimator to trust its position and heading completely. In simulation that means every value must describe the same vehicle in the same place at the same moment; once the estimator is satisfied, autonomous flight modes become available.</p></div>
+      </section>
+      <section id="course">
+        <span class="wp">+ · Build it yourself</span>
+        <h2>Want to see how it's done?</h2>
+        <div class="course">
+          <p>This article covers what the system does. To learn how it is built, step by step, take my Udemy course <strong>Quadcopter Simulation with O3DE, ArduPilot SITL and ROS 2</strong>. You set up the O3DE world and drone, connect ArduPilot SITL through ROS 2, write the bridge, and finish by flying autonomous missions from QGroundControl.</p>
+          <a class="btn" href="https://www.udemy.com/course/quadcopter-simulation-with-o3de-ardupilot-sitl-and-ros-2/?couponCode=26BBPAA2MX" target="_blank" rel="noopener">Enroll in the course on Udemy →</a>
+        </div>
       </section>
           </article>
 
